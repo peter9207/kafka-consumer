@@ -13,6 +13,10 @@ var rootCmd = &cobra.Command{
 	Use:   "consume <kafka-broker>",
 	Short: "consumer",
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) <= 1 {
+			cmd.Help()
+			return
+		}
 
 		kafkaURL := args[0]
 		topic := args[1]
@@ -71,7 +75,8 @@ var rootCmd = &cobra.Command{
 		for {
 			select {
 			case msg := <-partitionConsumer.Messages():
-				log.Printf("Consumed message offset %d\n", msg.Offset)
+				log.Printf("Consumed message offset %d, %v, %v\n", msg.Offset, msg.Topic, msg.Key)
+				log.Printf("%s", msg.Value)
 				consumed++
 			case <-signals:
 				break ConsumerLoop
