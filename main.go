@@ -13,6 +13,10 @@ var rootCmd = &cobra.Command{
 	Use:   "consume <kafka-broker>",
 	Short: "consumer",
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) <= 1 {
+			cmd.Help()
+			return
+		}
 
 		kafkaURL := args[0]
 		topic := args[1]
@@ -39,6 +43,7 @@ var rootCmd = &cobra.Command{
 		config.Producer.Return.Successes = true
 		config.Net.TLS.Enable = true
 		config.Version = sarama.V0_10_2_0
+		config.Consumer.Offsets.Initial = sarama.OffsetNewest
 
 		consumer, err := sarama.NewConsumer([]string{kafkaURL}, config)
 		if err != nil {
