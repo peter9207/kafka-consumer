@@ -79,7 +79,8 @@ var rootCmd = &cobra.Command{
 		for {
 			select {
 			case msg := <-partitionConsumer.Messages():
-				log.Printf("Consumed message offset %d\n", msg.Offset)
+				log.Printf("Consumed message offset %d, %v, %s\n", msg.Offset, msg.Topic, msg.Key)
+				log.Printf("%s", msg.Value)
 				consumed++
 			case <-signals:
 				break ConsumerLoop
