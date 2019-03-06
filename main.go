@@ -8,6 +8,10 @@ import "gopkg.in/Shopify/sarama.v1"
 import "crypto/tls"
 import "crypto/x509"
 import "io/ioutil"
+import "path"
+
+var certsDir string
+var startingOffset int64
 
 var rootCmd = &cobra.Command{
 	Use:   "consume <kafka-broker>",
@@ -21,12 +25,12 @@ var rootCmd = &cobra.Command{
 		kafkaURL := args[0]
 		topic := args[1]
 
-		keypair, err := tls.LoadX509KeyPair("service.cert", "service.key")
+		keypair, err := tls.LoadX509KeyPair(path.Join(certsDir, "service.cert"), path.Join(certsDir, "service.key"))
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		caCert, err := ioutil.ReadFile("ca.pem")
+		caCert, err := ioutil.ReadFile(path.Join(certsDir, "ca.pem"))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -34,7 +38,6 @@ var rootCmd = &cobra.Command{
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCert)
 
-		log.Print("creating config")
 		config := sarama.NewConfig()
 		config.Net.TLS.Config = &tls.Config{
 			Certificates: []tls.Certificate{keypair},
@@ -43,7 +46,7 @@ var rootCmd = &cobra.Command{
 		config.Producer.Return.Successes = true
 		config.Net.TLS.Enable = true
 		config.Version = sarama.V0_10_2_0
-		config.Consumer.Offsets.Initial = sarama.OffsetNewest
+		config.Consumer.Offsets.Initial = startingOffset
 
 		consumer, err := sarama.NewConsumer([]string{kafkaURL}, config)
 		if err != nil {
@@ -91,5 +94,8 @@ var rootCmd = &cobra.Command{
 
 func main() {
 
+	rootCmd.PersistentFlags().StringVarP(&certsDir, "certsDir", "c", "~/.certs", "-c dir")
+	rootCmd.PersistentFlags().Int64VarP(&startingOffset, "offset", "o", sarama.OffsetNewest, "-o 100")
 	rootCmd.Execute()
+
 }
